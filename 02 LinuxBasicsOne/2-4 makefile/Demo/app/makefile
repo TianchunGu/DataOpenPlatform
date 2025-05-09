@@ -1,17 +1,10 @@
-INCLUDEDIR=-I/home/wucz/tools -I/home/wucz/api
-LIBDIR=-L/home/wucz/tools -L/home/wucz/api
+INCLUDEDIR=-I'/home/gtc/GitHub/DataOpenPlatform/02 LinuxBasicsOne/2-4 makefile/Demo/tools/' -I'/home/gtc/GitHub/DataOpenPlatform/02 LinuxBasicsOne/2-4 makefile/Demo/api'
+LIBDIR=-L'/home/gtc/GitHub/DataOpenPlatform/02 LinuxBasicsOne/2-4 makefile/Demo/tools/' -L'/home/gtc/GitHub/DataOpenPlatform/02 LinuxBasicsOne/2-4 makefile/Demo/api'
 
-all:demo01 demo02 demo03
+all:demo01
 
 demo01:demo01.cpp
-        g++ -o demo01 demo01.cpp $(INCLUDEDIR) $(LIBDIR) -lpublic -lmyapi
-        cp demo01 /tmp/.
-
-demo02:demo02.cpp
-        g++ -o demo02 demo02.cpp $(INCLUDEDIR) $(LIBDIR) -lpublic -lmyapi
-
-demo03:demo03.cpp
-        g++ -o demo03 demo03.cpp $(INCLUDEDIR) $(LIBDIR) -lpublic -lmyapi
+	g++ -o demo01 demo01.cpp $(INCLUDEDIR) $(LIBDIR) -lpublic -lmyapi -Wl,-rpath,'/home/gtc/GitHub/DataOpenPlatform/02 LinuxBasicsOne/2-4 makefile/Demo/tools/' -Wl,-rpath,'/home/gtc/GitHub/DataOpenPlatform/02 LinuxBasicsOne/2-4 makefile/Demo/api'
 
 clean:
-        rm -f demo01 demo02 demo03
+	rm -f demo01

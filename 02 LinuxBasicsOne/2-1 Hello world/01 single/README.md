@@ -1,4 +1,4 @@
-## 编译运行
+## 单一源文件编译运行
 
 ```shell
 ➜  2-1 Hello world ls

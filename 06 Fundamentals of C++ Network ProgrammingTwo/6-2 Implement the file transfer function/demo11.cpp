@@ -1,5 +1,5 @@
 /*
- * 程序名：demo7.cpp，此程序用于演示封装socket通讯的客户端
+ * 程序名：demo11.cpp，此程序用于演示文件传输socket通讯的客户端
  */
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>  // 用于 std::ifstream
 #include <iostream>
 using namespace std;
 
@@ -73,6 +74,16 @@ class ctcpclient  // TCP通讯的客户端类。
     return true;
   }
 
+  bool send(void* buffer, const size_t size) {
+    if (m_clientfd == -1)
+      return false;  // 如果socket的状态是未连接，直接返回失败。
+
+    if ((::send(m_clientfd, buffer, size, 0)) <= 0)
+      return false;
+
+    return true;
+  }
+
   // 接收服务端的报文，成功返回true，失败返回false。
   // buffer-存放接收到的报文的内容，maxlen-本次接收报文的最大长度。
   bool recv(
@@ -102,6 +113,45 @@ class ctcpclient  // TCP通讯的客户端类。
     return true;
   }
 
+  // 向服务端发送文件内容
+  bool sendfile(const string& filename, const size_t filesize) {
+    // 以二进制的方式打开文件。
+    ifstream fin(filename, ios::binary);
+    if (fin.is_open() == false) {
+      cout << "打开文件" << filename << "失败。\n";
+      return false;
+    }
+
+    int onread = 0;  // 每次调用fin.read()时打算读取的字节数。  每次应搬砖头数。
+    int totalbytes = 0;  // 从文件中已读取的字节总数。 已搬砖头数。
+    char buffer[4096];   // 存放读取数据的buffer。     每次搬七块砖头。
+
+    while (true) {
+      memset(buffer, 0, sizeof(buffer));
+
+      // 计算本次应该读取的字节数，如果剩余的数据超过4096字节，就读4096字节。
+      if (filesize - totalbytes > 4096)
+        onread = 4096;
+      else
+        onread = filesize - totalbytes;
+
+      // 从文件中读取数据。
+      fin.read(buffer, onread);
+
+      // 把读取到的数据发送给对端。
+      if (send(buffer, onread) == false)
+        return false;
+
+      // 计算文件已读取的字节总数，如果文件已读完，跳出循环。
+      totalbytes = totalbytes + onread;
+
+      if (totalbytes == filesize)
+        break;
+    }
+
+    return true;
+  }
+
   ~ctcpclient() { close(); }
 };
 
@@ -119,27 +169,47 @@ int main(int argc, char* argv[]) {
     perror("connect()");
     return -1;
   }
-
-  // 第3步：与服务端通讯，客户发送一个请求报文后等待服务端的回复，收到回复后，再发下一个请求报文。
+  // 以下是发送文件的流程
+  // 1) 发送待传输文件名和文件大小。
+  // 定义文件信息的结构体
+  struct st_fileinfo {
+    char filename[1024];  // 文件名
+    int filesize;         // 文件大小
+  } fileinfo;
+  memset(&fileinfo, 0, sizeof(fileinfo));
+  strcpy(fileinfo.filename, argv[3]);  // 文件名
+  fileinfo.filesize = atoi(argv[4]);   // 文件大小
+  // 把文件信息的结构体发送给服务端
+  if (tcpclient.send(&fileinfo, sizeof(fileinfo)) == false) {
+    perror("send");
+    return -1;
+  }
+  cout << "发送文件信息的结构体" << fileinfo.filename << fileinfo.filesize
+       << endl;
+  // 2) 等待服务端的确认报文（文件名和文件的大小的确认）。
   string buffer;
-  for (int ii = 0; ii < 10; ii++)  // 循环3次，将与服务端进行三次通讯。
-  {
-    buffer = "这是第" + to_string(ii + 1) + "个超级女生，编号" +
-             to_string(ii + 1) + "。";
-    // 向服务端发送请求报文。
-    if (tcpclient.send(buffer) == false) {
-      perror("send");
-      break;
-    }
-    cout << "发送：" << buffer << endl;
-
-    // 接收服务端的回应报文，如果服务端没有发送回应报文，recv()函数将阻塞等待。
-    if (tcpclient.recv(buffer, 1024) == false) {
-      perror("recv()");
-      break;
-    }
-    cout << "接收：" << buffer << endl;
-
-    sleep(1);
+  if (tcpclient.recv(buffer, 2) == false) {
+    perror("recv()");
+    return -1;
+  }
+  if (buffer != "ok") {
+    cout << "服务端没有准备好接收文件。\n";
+    return -1;
+  }
+  // 3) 发送文件内容。
+  if (tcpclient.sendfile(fileinfo.filename, fileinfo.filesize) == false) {
+    perror("sendfile()");
+    return -1;
+  }
+  // 4) 等待服务端的确认报文（文件内容的确认）。
+  if (tcpclient.recv(buffer, 2) == false) {
+    perror("recv()");
+    return -1;
+  }
+  if (buffer != "ok") {
+    cout << "文件发送内容失败。\n";
+    return -1;
+  } else {
+    cout << "文件发送内容成功。\n";
   }
 }

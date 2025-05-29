@@ -1,5 +1,5 @@
 /*
- * 程序名：demo10.cpp，此程序用于演示多进程的socket服务端
+ * 程序名：demo12.cpp，此程序用于演示文件传输的socket服务端
  */
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 using namespace std;
 
@@ -101,6 +102,12 @@ class ctcpserver  // TCP通讯的服务端类。
     return true;
   }
 
+  bool recv(void* buffer, const size_t size) {
+    if (::recv(m_clientfd, buffer, size, 0) <= 0)
+      return false;
+    return true;
+  }
+
   // 关闭监听的socket。
   bool closelisten() {
     if (m_listenfd == -1)
@@ -118,6 +125,44 @@ class ctcpserver  // TCP通讯的服务端类。
 
     ::close(m_clientfd);
     m_clientfd = -1;
+    return true;
+  }
+
+  // 接收文件内容
+  bool recvfile(const string& filename, const size_t filesize) {
+    // 以二进制方式打开文件
+    ofstream fout;
+    fout.open(filename, ios::binary);
+    if (fout.is_open() == false) {
+      cout << "打开文件" << filename << "失败。\n";
+      return false;
+    }
+
+    int totalbytes = 0;  // 已接收文件的总字节数。
+    int onread = 0;      // 本次打算接收的字节数。
+    char buffer[4096];   // 接收文件内容的缓冲区。
+
+    while (true) {
+      // 计算本次应该接收的字节数。
+      if (filesize - totalbytes > 4096)
+        onread = 4096;
+      else
+        onread = filesize - totalbytes;
+
+      // 接收文件内容。
+      if (recv(buffer, onread) == false)
+        return false;
+
+      // 把接收到的内容写入文件。
+      fout.write(buffer, onread);
+
+      // 计算已接收文件的总字节数，如果文件接收完，跳出循环。
+      totalbytes = totalbytes + onread;
+
+      if (totalbytes == filesize)
+        break;
+    }
+
     return true;
   }
 
@@ -168,7 +213,7 @@ int main(int argc, char* argv[]) {
     if (pid == -1) {
       perror("fork()");
       return -1;
-    }                           // 系统资源不足。
+    }  // 系统资源不足。
     if (pid > 0) {              // 父进程。
       tcpserver.closeclient();  // 父进程关闭客户端连接的socket。
       continue;  // 父进程返回到循环开始的位置，继续受理客户端的连接。
@@ -182,25 +227,34 @@ int main(int argc, char* argv[]) {
 
     // 子进程负责与客户端进行通讯。
     cout << "客户端已连接(" << tcpserver.clientip() << ")。\n";
-
-    string buffer;
-    while (true) {
-      // 接收对端的报文，如果对端没有发送报文，recv()函数将阻塞等待。
-      if (tcpserver.recv(buffer, 1024) == false) {
-        perror("recv()");
-        break;
-      }
-      cout << "接收：" << buffer << endl;
-
-      buffer = "ok";
-      if (tcpserver.send(buffer) == false)  // 向对端发送报文。
-      {
-        perror("send");
-        break;
-      }
-      cout << "发送：" << buffer << endl;
+    // 以下是接受文件的流程
+    // 1) 接收文件名和文件大小信息。
+    // 定义文件信息的结构体
+    struct st_fileinfo {
+      char filename[1024];  // 文件名
+      int filesize;         // 文件大小
+    } fileinfo;
+    memset(&fileinfo, 0, sizeof(fileinfo));
+    // 用结构体存放接收报文的内容
+    if (tcpserver.recv(&fileinfo, sizeof(fileinfo)) == false) {
+      perror("recv()");
+      return -1;
     }
-
+    cout << "文件信息结构体" << fileinfo.filename << " " << fileinfo.filesize
+         << endl;
+    // 2) 给客户端回复确认报文，表示客户端可以发送文件了。
+    if (tcpserver.send("ok") == false) {
+      perror("send");
+      break;
+    }
+    // 3) 接收文件内容。
+    if (tcpserver.recvfile(fileinfo.filename, fileinfo.filesize) == false) {
+      cout << "接收文件" << fileinfo.filename << "失败。\n";
+    } else {
+      cout << "接收文件" << fileinfo.filename << "成功。\n";
+    }
+    // 4) 给客户端回复确认报文，表示文件已经接收完毕。
+    tcpserver.send("ok");
     return 0;  // 子进程一定要退出，否则又会回到accept()函数的位置。
   }
 }

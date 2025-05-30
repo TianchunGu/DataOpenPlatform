@@ -1,6 +1,9 @@
 all: demo1 demo2 demo10 demo12 demo14 demo16 demo18 demo20 demo22 demo23\
 	 demo24 demo26 demo28 demo29 demo30 demo32 demo34 demo36\
 	 demo37 demo38 demo39 demo42 demo44 demo45 demo46 demo47 demo50 demo51 demo52
+# 行继续符：反斜杠 \ 
+# 用作行继续符。这意味着当前行还没有结束，规则的定义会继续到下一行。
+# 这在规则（或变量定义）太长，不适合放在一行时非常有用，可以提高可读性。
 
 demo1:demo1.cpp
 	g++ -g -o demo1 demo1.cpp ../_public.cpp 

@@ -39,6 +39,9 @@ bool loadstcode(const string& inifile);  // 把站点参数文件加载到stlist
 
 char strddatetime[15];  // yyyymmddhh24miss格式的当前时间
 
+// 把容器datalist中的气象观测数据写入文件，outpath-数据文件存放的目录；datafmt-数据文件的格式，取值：csv、xml、json
+bool crtsurffile(const string& outpath, const string& datafmt);
+
 clogfile logfile;  // 本程序运行的日志
 
 // 程序退出和信号2,15的处理函数
@@ -46,7 +49,8 @@ void EXIT(int sig);
 
 int main(int argc, char* argv[]) {
   // 检查参数数量是否正确
-  if (argc != 4) {
+  // 站点参数文件 生成的测试数据存放的目录 本程序运行的日志 输出数据文件的格式
+  if (argc != 5) {
     // 如果参数数量不正确，输出帮助信息
     cout << "Using:./crtsurfdata inifile outpath logfile datafmt\n";
     cout << "Examples:/project/tools/bin/procctl 60 "
@@ -89,7 +93,14 @@ int main(int argc, char* argv[]) {
   strncpy(strddatetime + 12, "00", 2);      // 把时间数据中的秒固定填00
   // 2. 根据站点参数，生成站点观测数据（随机数）；
   crtsurfdata();
-  // 3. 把站点观测数据保存到文件中。
+  // 3.
+  // 把站点观测数据保存到文件中。把容器datalist中的气象观测数据写入文件，outpath-数据文件存放的目录；datafmt-数据文件的格式，取值：csv、xml、json
+  if (strstr(argv[4], "csv") != 0)
+    crtsurffile(argv[2], "csv");
+  if (strstr(argv[4], "xml") != 0)
+    crtsurffile(argv[2], "xml");
+  if (strstr(argv[4], "json") != 0)
+    crtsurffile(argv[2], "json");
 
   // 记录程序运行结束的日志
   logfile.write("crtsurfdata 运行结束\n");
@@ -174,6 +185,77 @@ void crtsurfdata() {
   }
 }
 
+// 把容器datalist中的气象观测数据写入文件，outpath-数据文件存放的目录；datafmt-数据文件的格式，取值：csv、xml、json
+bool crtsurffile(const string& outpath, const string& datafmt) {
+  // 加进程编号是一种常见的方法，这样，不同进程的输出文件不会冲突。
+  // 拼接生成数据的文件名，例如：/tmp/idc/surfdata/SURF_ZH_20210629092200_2254.csv
+  string strfilename = outpath + "/" + "SURF_ZH_" + strddatetime + "_" +
+                       to_string(getpid()) + "." + datafmt;
+
+  cofile ofile;  // 写入数据文件的对象。
+
+  if (ofile.open(strfilename) == false) {
+    logfile.write("ofile.open(%s) failed.\n", strfilename.c_str());
+    return false;
+  }
+
+  // 把datalist容器中的观测数据写入文件，支持csv、xml和json三种格式。
+  if (datafmt == "csv")
+    ofile.writeline(
+        "站点代码,数据时间,气温,气压,相对湿度,风向,风速,降雨量,能见度\n");
+  if (datafmt == "xml")
+    ofile.writeline("<data>\n");
+  if (datafmt == "json")
+    ofile.writeline("{\"data\":[\n");
+
+  // 遍历存放观测数据的datalist容器。
+  for (auto& aa : datalist) {
+    // 把每行数据写入文件。
+    if (datafmt == "csv")
+      ofile.writeline("%s,%s,%.1f,%.1f,%d,%d,%.1f,%.1f,%.1f\n", aa.obtid,
+                      aa.ddatetime, aa.t / 10.0, aa.p / 10.0, aa.u, aa.wd,
+                      aa.wf / 10.0, aa.r / 10.0, aa.vis / 10.0);
+
+    if (datafmt == "xml")
+      ofile.writeline(
+          "<obtid>%s</obtid><ddatetime>%s</ddatetime><t>%.1f</t><p>%.1f</"
+          "p><u>%d</u>"
+          "<wd>%d</wd><wf>%.1f</wf><r>%.1f</r><vis>%.1f</vis><endl/>\n",
+          aa.obtid, aa.ddatetime, aa.t / 10.0, aa.p / 10.0, aa.u, aa.wd,
+          aa.wf / 10.0, aa.r / 10.0, aa.vis / 10.0);
+
+    if (datafmt == "json") {
+      ofile.writeline(
+          "{\"obtid\":\"%s\",\"ddatetime\":\"%s\",\"t\":\"%.1f\",\"p\":\"%."
+          "1f\","
+          "\"u\":\"%d\",\"wd\":\"%d\",\"wf\":\"%.1f\",\"r\":\"%.1f\",\"vis\":"
+          "\"%.1f\"}",
+          aa.obtid, aa.ddatetime, aa.t / 10.0, aa.p / 10.0, aa.u, aa.wd,
+          aa.wf / 10.0, aa.r / 10.0, aa.vis / 10.0);
+      // 注意，json文件的最后一条记录不需要逗号，用以下代码特殊处理。
+      static int ii = 0;               // 已写入数据行数的计数器。
+      if (ii < datalist.size() - 1) {  // 如果不是最后一行。
+        ofile.writeline(",\n");
+        ii++;
+      } else
+        ofile.writeline("\n");
+    }
+  }
+
+  if (datafmt == "xml")
+    ofile.writeline("</data>\n");
+  if (datafmt == "json")
+    ofile.writeline("]}\n");
+
+  ofile.closeandrename();  // 关闭临时文件，并改名为正式的文件。
+
+  logfile.write("生成数据文件%s成功，数据时间%s，记录数%d。\n",
+                strfilename.c_str(), strddatetime, datalist.size());
+
+  return true;
+}
+
 /*
-./crtsurfdata ../ini/stcode.ini outpath logfile
+./crtsurfdata ../ini/stcode.ini
+/home/gtc/GitHub/DataOpenPlatform/project_0.5/idc/output logfile xml
 */

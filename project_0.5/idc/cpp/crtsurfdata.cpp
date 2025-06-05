@@ -19,8 +19,25 @@ struct st_stcode {  // 站点参数结构体
   double height;      // 海拔高度
 };
 
+// 气象站观测数据的结构体
+struct st_surfdata {
+  char obtid[11];      // 站点代码
+  char ddatetime[15];  // 数据时间：格式yyyymmddhh24miss，精确到分钟，秒固定填00
+  int t;               // 气温：单位，0.1摄氏度
+  int p;               // 气压：单位，0.1百帕
+  int u;               // 相对湿度：0-100之间的值
+  int wd;              // 风向：0-360之间的值
+  int wf;              // 风速：单位，0.1米/秒
+  int r;               // 降雨量：单位，0.1毫米
+  int vis;             // 能见度：单位，0.1米
+};
+list<struct st_surfdata> datalist;  // 存放观测数据的容器
+void crtsurfdata();  // 根据stlist容器中的站点参数，生成站点的观测数据，存放在datalist中·
+
 list<st_stcode> stlist;                  // 存放全部的站点参数
 bool loadstcode(const string& inifile);  // 把站点参数文件加载到stlist容器中
+
+char strddatetime[15];  // yyyymmddhh24miss格式的当前时间
 
 clogfile logfile;  // 本程序运行的日志
 
@@ -66,7 +83,12 @@ int main(int argc, char* argv[]) {
   if (loadstcode(argv[1]) == false) {
     EXIT(-1);
   }
+  // 获取时间的代码
+  memset(strddatetime, 0, sizeof(strddatetime));
+  ltime(strddatetime, "yyyymmddhh24miss");  // 获取系统当前时间
+  strncpy(strddatetime + 12, "00", 2);      // 把时间数据中的秒固定填00
   // 2. 根据站点参数，生成站点观测数据（随机数）；
+  crtsurfdata();
   // 3. 把站点观测数据保存到文件中。
 
   // 记录程序运行结束的日志
@@ -120,6 +142,36 @@ bool loadstcode(const string& inifile) {
   //                 aa.obtid, aa.lat, aa.lon, aa.height);
   // }
   return true;
+}
+
+// 根据stlist容器中的站点参数，生成站点的观测数据，存放在datalist中·
+void crtsurfdata() {
+  srand(time(0));          //  设置随机数种子。
+  st_surfdata stsurfdata;  // 存放观测数据的结构体
+  // 遍历气象站点的参数的stlist容器，生成每个站点的观测数据，存放在datalist容器中。
+  for (auto& aa : stlist) {
+    memset(&stsurfdata, 0, sizeof(stsurfdata));  // 初始化stsurfdata结构体。
+
+    // 填充观测数据的结构体的成员
+    strcpy(stsurfdata.obtid, aa.obtid);          // 站点代码
+    strcpy(stsurfdata.ddatetime, strddatetime);  // 数据时间
+    stsurfdata.t =
+        rand() % 350;  // 气温：单位0.1摄氏度。0-350之间。可犯可不犯的错误不要犯
+    stsurfdata.p = rand() % 265 + 10000;      // 气压：单位0.1百帕。0-1000之间。
+    stsurfdata.u = rand() % 101;              // 相对湿度：0-100之间。
+    stsurfdata.wd = rand() % 360;             // 风向：0-360之间。
+    stsurfdata.wf = rand() % 150;             // 风速：单位0.1m/s。
+    stsurfdata.r = rand() % 16;               // 降雨量：0.1mm
+    stsurfdata.vis = rand() % 5001 + 100000;  // 能见度：0.1米
+
+    datalist.push_back(stsurfdata);  // 把观测数据的结构体放入datalist容器
+  }
+
+  for (auto& aa : datalist) {
+    logfile.write("%s %s %.1f %.1f %d %.1f %.1f %.1f %.1f\n", aa.obtid,
+                  aa.ddatetime, aa.t / 10.0, aa.p / 10.0, aa.u, aa.wd,
+                  aa.wf / 10.0, aa.r / 10.0, aa.vis / 10.0);
+  }
 }
 
 /*

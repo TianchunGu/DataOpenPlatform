@@ -264,3 +264,16 @@ bool crtsurffile(const string& outpath, const string& datafmt) {
 ./crtsurfdata ../ini/stcode.ini
 /home/gtc/GitHub/DataOpenPlatform/project_0.5/idc/output logfile xml
 */
+
+/*
+编译文件：该文件的编译基于makefile文件
+
+文件运行：
+该文件通过procctl启动，运行周期建议为60秒，命令如下：
+/home/gtc/GitHub/DataOpenPlatform/project_0.5/tools/cpp/procctl 60
+/home/gtc/GitHub/DataOpenPlatform/project_0.5/idc/cpp/crtsurfdata
+/home/gtc/GitHub/DataOpenPlatform/project_0.5/idc/ini/stcode.ini
+/tmp/idc/surfdata
+/home/gtc/GitHub/DataOpenPlatform/project_0.5/log/idc/crtsurfdata.log
+csv,xml,json
+*/

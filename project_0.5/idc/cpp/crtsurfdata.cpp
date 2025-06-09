@@ -47,6 +47,8 @@ clogfile logfile;  // 本程序运行的日志
 // 程序退出和信号2,15的处理函数
 void EXIT(int sig);
 
+cpactive pactive;  // 进程的心跳
+
 int main(int argc, char* argv[]) {
   // 检查参数数量是否正确
   // 站点参数文件 生成的测试数据存放的目录 本程序运行的日志 输出数据文件的格式
@@ -72,6 +74,9 @@ int main(int argc, char* argv[]) {
   closeioandsignal(true);  // 关闭0,1,2和忽略全部的信号
   signal(SIGINT, EXIT);
   signal(SIGTERM, EXIT);
+
+  // 把当前进程的心跳加入到共享内存
+  pactive.addpinfo(10, "crtsurfdata");
 
   // 打开日志文件
   if (logfile.open(argv[3]) == false) {

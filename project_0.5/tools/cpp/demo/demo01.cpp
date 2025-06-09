@@ -83,6 +83,7 @@ int main() {
   // 指针表示法
   // memcpy(m_shm + m_pos,  q&procinfo, sizeof(struct stprocinfo));
   semlock.post();  //  解锁
+  // 循环更新共享内存
   while (1) {
     printf("服务程序在运行中...\n");
     sleep(1);

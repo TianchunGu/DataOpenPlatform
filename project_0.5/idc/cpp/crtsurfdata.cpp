@@ -182,12 +182,12 @@ void crtsurfdata() {
 
     datalist.push_back(stsurfdata);  // 把观测数据的结构体放入datalist容器
   }
-
-  for (auto& aa : datalist) {
-    logfile.write("%s %s %.1f %.1f %d %.1f %.1f %.1f %.1f\n", aa.obtid,
-                  aa.ddatetime, aa.t / 10.0, aa.p / 10.0, aa.u, aa.wd,
-                  aa.wf / 10.0, aa.r / 10.0, aa.vis / 10.0);
-  }
+  // 将生成的数据写入日志中
+  // for (auto& aa : datalist) {
+  //   logfile.write("%s %s %.1f %.1f %d %.1f %.1f %.1f %.1f\n", aa.obtid,
+  //                 aa.ddatetime, aa.t / 10.0, aa.p / 10.0, aa.u, aa.wd,
+  //                 aa.wf / 10.0, aa.r / 10.0, aa.vis / 10.0);
+  // }
 }
 
 // 把容器datalist中的气象观测数据写入文件，outpath-数据文件存放的目录；datafmt-数据文件的格式，取值：csv、xml、json
@@ -276,4 +276,7 @@ bool crtsurffile(const string& outpath, const string& datafmt) {
 /tmp/idc/surfdata
 /home/gtc/GitHub/DataOpenPlatform/project_0.5/log/idc/crtsurfdata.log
 csv,xml,json
+
+需要使用以下命令才能杀死进程
+killall -9 procctl
 */

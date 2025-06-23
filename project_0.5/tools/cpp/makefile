@@ -8,7 +8,7 @@ PUBCPP = /home/gtc/GitHub/DataOpenPlatform/project_0.5/public/_public.cpp
 CFLAGS = -g
 # CFLAGS = -O2
 
-all:procctl checkproc
+all:procctl checkproc deletefiles
 
 procctl:procctl.cpp
 				g++ -g -o procctl procctl.cpp 
@@ -18,5 +18,9 @@ checkproc:checkproc.cpp
 				g++ $(CFLAGS) -o checkproc checkproc.cpp $(PUBINCL) $(PUBCPP)
 				cp -f checkproc ../bin/.
 
+deletefiles:deletefiles.cpp
+				g++ $(CFLAGS) -o deletefiles deletefiles.cpp $(PUBINCL) $(PUBCPP)
+				cp -f deletefiles ../bin/.
+
 clean:
-	rm -f procctl checkproc
+	rm -f procctl checkproc deletefiles

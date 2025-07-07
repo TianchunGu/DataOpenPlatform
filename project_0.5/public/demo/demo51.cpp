@@ -10,19 +10,19 @@ int main(int argc, char* argv[]) {
   cftpclient ftp;
 
   // 登录远程ftp服务器，请改为你自己服务器的ip地址。
-  if (ftp.login("", "ggb", "ggb123456") == false) {
-    printf("ftp.login(,ggb/ggb123456) failed.\n");
+  if (ftp.login("127.0.0.1", "ggb", "ggb123456") == false) {
+    printf("ftp.login(127.0.0.1,ggb/ggb123456) failed.\n");
     return -1;
   }
 
-  // 在ftp服务器上创建/home/wucz/tmp，注意，如果目录已存在，会返回失败。
-  if (ftp.mkdir("/home/wucz/tmp") == false) {
+  // 在ftp服务器上创建/home/ggb/ftp_data/tmp，注意，如果目录已存在，会返回失败。
+  if (ftp.mkdir("/home/ggb/ftp_data/tmp") == false) {
     printf("ftp.mkdir() failed.\n");
     return -1;
   }
 
-  // 把ftp服务器上的工作目录切换到/home/wucz/tmp
-  if (ftp.chdir("/home/wucz/tmp") == false) {
+  // 把ftp服务器上的工作目录切换到/home/ggb/ftp_data/tmp
+  if (ftp.chdir("/home/ggb/ftp_data/tmp") == false) {
     printf("ftp.chdir() failed.\n");
     return -1;
   }

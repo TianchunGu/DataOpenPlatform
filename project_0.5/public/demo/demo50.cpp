@@ -10,15 +10,14 @@ int main(int argc, char* argv[]) {
   cftpclient ftp;
 
   // 登录远程ftp服务器，请改为你自己服务器的ip地址。
-  if (ftp.login("", "ggb", "ggb123456") == false) {
-    printf("ftp.login(,ggb/ggb123456) failed.\n");
+  if (ftp.login("127.0.0.1", "ggb", "ggb123456") == false) {
+    printf("ftp.login(127.0.0.1,ggb/ggb123456) failed.\n");
     return -1;
   }
 
   // 获取服务器上/project/public/*.h文件列表，保存在本地的/tmp/list/tmp.list文件中。
   // 如果/tmp/list目录不存在，会自动创建它。
-  if (ftp.nlist("/home/gtc/GitHub/DataOpenPlatform/project_0.5/idc/output/*",
-                "/tmp/list/tmp.list") == false) {
+  if (ftp.nlist("oracle/*", "/tmp/list/tmp.list") == false) {
     printf("ftp.nlist() failed.\n");
     return -1;
   }

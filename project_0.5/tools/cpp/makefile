@@ -8,7 +8,7 @@ PUBCPP = /home/gtc/GitHub/DataOpenPlatform/project_0.5/public/_public.cpp
 CFLAGS = -g
 # CFLAGS = -O2
 
-all:procctl checkproc deletefiles gzipfiles
+all:procctl checkproc deletefiles gzipfiles ftpgetfiles
 
 procctl:procctl.cpp
 				g++ -g -o procctl procctl.cpp 
@@ -26,5 +26,9 @@ gzipfiles:gzipfiles.cpp
 				g++ $(CFLAGS) -o gzipfiles gzipfiles.cpp $(PUBINCL) $(PUBCPP)
 				cp -f gzipfiles ../bin/.
 
+ftpgetfiles:ftpgetfiles.cpp
+				g++ $(CFLAGS) -o ftpgetfiles ftpgetfiles.cpp $(PUBINCL) $(PUBCPP) /home/gtc/GitHub/DataOpenPlatform/project_0.5/public/libftp.a /home/gtc/GitHub/DataOpenPlatform/project_0.5/public/_ftp.cpp
+				cp -f ftpgetfiles ../bin/.
+
 clean:
-	rm -f procctl checkproc deletefiles gzipfiles
+	rm -f procctl checkproc deletefiles gzipfiles ftpgetfiles

@@ -16,10 +16,10 @@ int main(int argc, char* argv[]) {
   }
 
   // 在ftp服务器上创建/home/ggb/ftp_data/tmp，注意，如果目录已存在，会返回失败。
-  if (ftp.mkdir("/home/ggb/ftp_data/tmp") == false) {
-    printf("ftp.mkdir() failed.\n");
-    return -1;
-  }
+  // if (ftp.mkdir("/home/ggb/ftp_data/tmp") == false) {
+  //   printf("ftp.mkdir() failed.\n");
+  //   return -1;
+  // }
 
   // 把ftp服务器上的工作目录切换到/home/ggb/ftp_data/tmp
   if (ftp.chdir("/home/ggb/ftp_data/tmp") == false) {
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   }
 
   // 把本地的demo51.cpp上传到ftp服务器的当前工作目录。
-  if (ftp.put("demo51.cpp", "demo51.cpp") == true)
+  if (ftp.put("test.csv", "test.csv") == true)
     printf("put demo51.cpp ok.\n");
   else
     printf("put demo51.cpp failed.\n");
